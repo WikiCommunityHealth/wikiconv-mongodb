@@ -7,12 +7,19 @@ load_dotenv()
 client = pymongo.MongoClient("mongodb://localhost:27017")
 print("CONNECTION SETUP")
 
+# %% config db
+DB_NAME = 'wiki'
+DATASET_COLLECTION_NAME = 'dataset-it-min'
+USER_COLLECTION_NAME = 'users'
+print("Collections selected")
+
 # %% DB setup
-db = client['wiki']
-collFull = db['dataset-it-min']
-collUsers = db['users']
+db = client[DB_NAME]
+collFull = db[DATASET_COLLECTION_NAME]
+collUsers = db[USER_COLLECTION_NAME]
+
 collUsers.drop()
-print("Database setup")
+print("Database cleaned")
 
 usersPointer = collFull.aggregate([{
     "$group": {
@@ -97,7 +104,7 @@ for u in usersPointer:
     u['isBot'] = True if u['username'] and "bot" in u['username'].lower() else False
     collUsers.insert(u)
 
-print('OK')
+print('User collection created')
 
 
 # %%
