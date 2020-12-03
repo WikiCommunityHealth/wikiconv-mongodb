@@ -81,6 +81,7 @@ usersPointer = collFull.aggregate([{
     }
 }], allowDiskUse=True)
 
+counter = 0;
 for u in usersPointer:
     if 'ip' in u['_id']:
         u['_id'] = u['_id']['ip']
@@ -103,8 +104,12 @@ for u in usersPointer:
 
     u['isBot'] = True if u['username'] and "bot" in u['username'].lower() else False
     collUsers.insert(u)
+    counter += 1
+    if counter % 1000 == 0:
+        print(f'Inserted {counter} users')
 
-print('User collection created')
+print('All users inserted')
+
 
 
 # %%
