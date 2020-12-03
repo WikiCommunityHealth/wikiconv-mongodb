@@ -1,11 +1,11 @@
 #! /bin/bash
 
 DB_FOLDER="dataset"
-IT_FOLDER="wikiconv-it"
+LANG_FOLDER="wikiconv-it"
 URL_DB="mongodb://localhost:27017/wiki-conv-it"
 DB_COLLECTION="full"
 
-mkdir -p $DB_FOLDER && cd $DB_FOLDER && mkdir -p $IT_FOLDER && cd $IT_FOLDER
+mkdir -p $DB_FOLDER && cd $DB_FOLDER && mkdir -p $LANG_FOLDER && cd $LANG_FOLDER
 
 echo "Downloading files"
 curl https://s3-eu-west-1.amazonaws.com/pfigshare-u-files/22889003/20200401itjsonlines00000of00005.gz --output wikiconv-it-0.gz
