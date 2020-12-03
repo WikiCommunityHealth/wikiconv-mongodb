@@ -5,7 +5,7 @@ LANG_FOLDER="wikiconv-en"
 URL_DB="mongodb://localhost:27017/wiki-conv-en"
 DB_COLLECTION="full"
 
-mkdir -p $DB_FOLDER && cd $DB_FOLDER && mkdir -p $LANG_folder && cd $LANG_FOLDER
+mkdir -p $DB_FOLDER && cd $DB_FOLDER && mkdir -p $LANG_FOLDER && cd $LANG_FOLDER
 
 ### ------------- 00-09
 
