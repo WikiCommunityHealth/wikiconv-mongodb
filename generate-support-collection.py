@@ -2,38 +2,40 @@
 import pymongo
 import os
 from datetime import datetime
+from tqdm import tqdm
 client = pymongo.MongoClient("mongodb://localhost:27017")
 print("Connection setup")
 
 # %% Function setup
-def createCollection(collection, isUsers, min):
+def createCollection(collection, collectionMin, isUsers):
 
     collection.drop()
+    collectionMin.drop()
     print("Old collection dropped")
 
     # GROUP
     groupQuery = {
         "count": {"$sum": 1},
-    }
 
-    if not min:
         # typeOfActions
-        groupQuery["ADDITION"] = {"$sum": {"$cond": [{"$eq": ["$type", "ADDITION"]}, 1, 0]}}
-        groupQuery["MODIFICATION"] = {"$sum": {"$cond": [{"$eq": ["$type", "MODIFICATION"]}, 1, 0]}}
-        groupQuery["DELETION"] = {"$sum": {"$cond": [{"$eq": ["$type", "DELETION"]}, 1, 0]}}
-        groupQuery["RESTORATION"] = {"$sum": {"$cond": [{"$eq": ["$type", "RESTORATION"]}, 1, 0]}}
+        "ADDITION": {"$sum": {"$cond": [{"$eq": ["$type", "ADDITION"]}, 1, 0]}},
+        "MODIFICATION": {"$sum": {"$cond": [{"$eq": ["$type", "MODIFICATION"]}, 1, 0]}},
+        "DELETION": {"$sum": {"$cond": [{"$eq": ["$type", "DELETION"]}, 1, 0]}},
+        "RESTORATION": {"$sum": {"$cond": [{"$eq": ["$type", "RESTORATION"]}, 1, 0]}},
 
         # scoreActions
-        groupQuery["toxicityCounter"] = {"$sum": {"$cond": [{"$gt": ["$score.toxicity", 0.5]}, 1, 0]}}
-        groupQuery["severeToxicityCounter"] = {"$sum": {"$cond": [{"$gt": ["$score.severeToxicity", 0.5]}, 1, 0]}}
-        groupQuery["profanityCounter"] = {"$sum": {"$cond": [{"$gt": ["$score.profanity", 0.5]}, 1, 0]}}
-        groupQuery["threatCounter"] = {"$sum": {"$cond": [{"$gt": ["$score.threat", 0.5]}, 1, 0]}}
-        groupQuery["insultCounter"] = {"$sum": {"$cond": [{"$gt": ["$score.insult", 0.5]}, 1, 0]}}
-        groupQuery["identityAttackCounter"] = {"$sum": {"$cond": [{"$gt": ["$score.identityAttack", 0.5]}, 1, 0]}}
+        "toxicityCounter": {"$sum": {"$cond": [{"$gt": ["$score.toxicity", 0.5]}, 1, 0]}},
+        "severeToxicityCounter": {"$sum": {"$cond": [{"$gt": ["$score.severeToxicity", 0.5]}, 1, 0]}},
+        "profanityCounter": {"$sum": {"$cond": [{"$gt": ["$score.profanity", 0.5]}, 1, 0]}},
+        "threatCounter": {"$sum": {"$cond": [{"$gt": ["$score.threat", 0.5]}, 1, 0]}},
+        "insultCounter": {"$sum": {"$cond": [{"$gt": ["$score.insult", 0.5]}, 1, 0]}},
+        "identityAttackCounter": {"$sum": {"$cond": [{"$gt": ["$score.identityAttack", 0.5]}, 1, 0]}},
 
         # activityDate
-        groupQuery["firstEdit"] = {"$min": "$timestamp"}
-        groupQuery["lastEdit"] = {"$max": "$timestamp"}
+        "firstEdit": {"$min": "$timestamp"},
+        "lastEdit": {"$max": "$timestamp"}
+    }
+
 
     if isUsers:
         groupQuery["_id"] = {"id": "$user.id", "ip": "$user.ip"}
@@ -48,27 +50,25 @@ def createCollection(collection, isUsers, min):
     projectQuery = {
         "_id": 1,
         "count": 1,
-    }
-
-    if not min:
-        projectQuery["typeOfActions"] = {
+        "typeOfActions": {
             "ADDITION": "$ADDITION",
             "MODIFICATION": "$MODIFICATION",
             "DELETION": "$DELETION",
             "RESTORATION": "$RESTORATION",
-        }
-        projectQuery["scoreActions"] = {
+        },
+        "scoreActions": {
             "toxicityCounter": "$toxicityCounter",
             "severeToxicityCounter": "$severeToxicityCounter",
             "profanityCounter": "$profanityCounter",
             "threatCounter": "$threatCounter",
             "insultCounter": "$insultCounter",
             "identityAttackCounter": "$identityAttackCounter"
-        }
-        projectQuery["activityDate"] = {
+        },
+        "activityDate": {
             "firstEdit": "$firstEdit",
             "lastEdit": "$lastEdit",
         }
+    }
 
     if isUsers:
         projectQuery["username"] = 1
@@ -77,46 +77,67 @@ def createCollection(collection, isUsers, min):
         projectQuery["pageTitle"] = 1
         projectQuery["workedByUsersCount"] = { "$cond": { "if": { "$isArray": "$workedByUsersCount" }, "then": { "$size": "$workedByUsersCount" }, "else": None} }
 
-
+    print('Querying ...')
     usersPointer = collFull.aggregate(
         [{"$group": groupQuery}, {"$project": projectQuery}],
         allowDiskUse=True)
+    print('Query completed')
 
     counter = 0
-    tempUsers = []
-    for u in usersPointer:
+    batchValues = []
+    batchValuesMin = []
+    for val in tqdm(usersPointer):
         if isUsers:
-            if 'ip' in u['_id']:
-                u['_id'] = u['_id']['ip']
-            if 'id' in u['_id']:
-                u['_id'] = u['_id']['id']
+            if 'ip' in val['_id']:
+                val['_id'] = val['_id']['ip']
+            if 'id' in val['_id']:
+                val['_id'] = val['_id']['id']
 
-        if not min:
-            u['activityDate']['firstEdit'] = datetime.strptime(u['activityDate']['firstEdit'], '%Y-%m-%dT%H:%M:%SZ')
-            u['activityDate']['lastEdit'] = datetime.strptime(u['activityDate']['lastEdit'], '%Y-%m-%dT%H:%M:%SZ')
-            days = (u['activityDate']['lastEdit'] - u['activityDate']['firstEdit']).days
-            u['activityDate']['activeDays'] = days
-            u['activityDate']['editsPerDay'] = u['count'] / days if days > 0 else 0
+        val['activityDate']['firstEdit'] = datetime.strptime(val['activityDate']['firstEdit'], '%Y-%m-%dT%H:%M:%SZ')
+        val['activityDate']['lastEdit'] = datetime.strptime(val['activityDate']['lastEdit'], '%Y-%m-%dT%H:%M:%SZ')
+        days = (val['activityDate']['lastEdit'] - val['activityDate']['firstEdit']).days
+        val['activityDate']['activeDays'] = days
+        val['activityDate']['editsPerDay'] = val['count'] / days if days > 0 else 0
 
-            count = u['count']
-            u['scoreActions']['toxicityCounterRatio'] = u['scoreActions']['toxicityCounter'] / count
-            u['scoreActions']['severeToxicityCounterRatio'] = u['scoreActions']['severeToxicityCounter'] / count
-            u['scoreActions']['profanityCounterRatio'] = u['scoreActions']['profanityCounter'] / count
-            u['scoreActions']['threatCounterRatio'] = u['scoreActions']['threatCounter'] / count
-            u['scoreActions']['insultCounterRatio'] = u['scoreActions']['insultCounter'] / count
-            u['scoreActions']['identityAttackCounterRatio'] = u['scoreActions']['identityAttackCounter'] / count
+        count = val['count']
+        val['scoreActions']['toxicityCounterRatio'] = val['scoreActions']['toxicityCounter'] / count
+        val['scoreActions']['severeToxicityCounterRatio'] = val['scoreActions']['severeToxicityCounter'] / count
+        val['scoreActions']['profanityCounterRatio'] = val['scoreActions']['profanityCounter'] / count
+        val['scoreActions']['threatCounterRatio'] = val['scoreActions']['threatCounter'] / count
+        val['scoreActions']['insultCounterRatio'] = val['scoreActions']['insultCounter'] / count
+        val['scoreActions']['identityAttackCounterRatio'] = val['scoreActions']['identityAttackCounter'] / count
 
         if isUsers:
-            u['isBot'] = True if u['username'] and "bot" in u['username'].lower() else False
-        tempUsers.append(u)
+            val['isBot'] = True if val['username'] and "bot" in val['username'].lower() else False
+
+        if isUsers:
+            batchValuesMin.append({
+                '_id': val['_id'],
+                'username': val['username'],
+                'count': val['count'],
+                'isBot': val['isBot'],
+                'workedOnPagesCount': val['workedOnPagesCount']
+            })
+        else:
+            batchValuesMin.append({
+                '_id': val['_id'],
+                'pageTitle': val['pageTitle'],
+                'count': val['count'],
+                'workedByUsersCount': val['workedByUsersCount']
+            })
+        batchValues.append(val)
         # collection.insert(u)
         counter += 1
         if counter % 10000 == 0:
-            collection.insert_many(tempUsers)
-            tempUsers = []
-            print(f'Inserted {counter} documents')
-
-    print('All documents inserted')
+            collection.insert_many(batchValues)
+            collectionMin.insert_many(batchValuesMin)
+            batchValues = []
+            batchValuesMin = []
+            #print(f'Inserted {counter} documents')
+    
+    collection.insert_many(batchValues)
+    collectionMin.insert_many(batchValuesMin)
+    print(f'All {counter} documents inserted')
 
 print("Functions defined")
 
@@ -139,16 +160,8 @@ print("Collections selected")
 
 # %% Create Users
 print(" -- USERS -- ")
-createCollection(collUsers, True, False)
-
-# %% Create Users Min
-print(" -- USERS MIN -- ")
-createCollection(collUsersMin, True, True)
+createCollection(collUsers, collUsersMin, True)
 
 # %% Create Pages
 print(" -- PAGES -- ")
-createCollection(collPages, False, False)
-
-# %% Create Pages Min
-print(" -- PAGES MIN -- ")
-createCollection(collPagesMin, False, True)
+createCollection(collPages, collPagesMin, False)
