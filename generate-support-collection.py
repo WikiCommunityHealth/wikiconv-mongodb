@@ -83,6 +83,7 @@ def createCollection(collection, isUsers, min):
         allowDiskUse=True)
 
     counter = 0
+    tempUsers = []
     for u in usersPointer:
         if isUsers:
             if 'ip' in u['_id']:
@@ -107,9 +108,12 @@ def createCollection(collection, isUsers, min):
 
         if isUsers:
             u['isBot'] = True if u['username'] and "bot" in u['username'].lower() else False
-        collection.insert(u)
+        tempUsers.append(u)
+        # collection.insert(u)
         counter += 1
-        if counter % 1000 == 0:
+        if counter % 10000 == 0:
+            collection.insert_many(tempUsers)
+            tempUsers = []
             print(f'Inserted {counter} documents')
 
     print('All documents inserted')
@@ -118,7 +122,7 @@ print("Functions defined")
 
 # %% config db
 DB_NAME = 'wiki'
-DATASET_COLLECTION_NAME = 'dataset-it-min'
+DATASET_COLLECTION_NAME = 'dataset-it'
 USERS_COLLECTION_NAME = 'users'
 USERS_MIN_COLLECTION_NAME = 'users-min'
 PAGES_COLLECTION_NAME = 'pages'
