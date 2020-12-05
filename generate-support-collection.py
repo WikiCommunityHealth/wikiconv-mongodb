@@ -18,7 +18,7 @@ if (len(sys.argv) == 3):
 print(f'Using db: {DB_NAME} collection: {DATASET_COLLECTION_NAME}')
 # %% config db
 
-client = pymongo.MongoClient("mongodb://localhost:27017")
+client = pymongo.MongoClient('mongodb://localhost:27017')
 db = client[DB_NAME]
 collFull = db[DATASET_COLLECTION_NAME]
 
@@ -27,7 +27,7 @@ collUsersMin = db[USERS_MIN_COLLECTION_NAME]
 collPages = db[PAGES_COLLECTION_NAME]
 collPagesMin = db[PAGES_MIN_COLLECTION_NAME]
 
-print("Connection setup")
+print('Connection setup')
 
 # %% Function setup
 def CurrentTimeStr():
@@ -41,73 +41,73 @@ def createCollection(collection, collectionMin, isUsers):
 
     # GROUP
     groupQuery = {
-        "totalActions": {"$sum": 1},
-        "nrOfRevisions": {"$addToSet": "$revId"},
+        'totalActions': {'$sum': 1},
+        'nrOfRevisions': {'$addToSet': '$revId'},
 
         # typeOfActions
-        "ADDITION": {"$sum": {"$cond": [{"$eq": ["$type", "ADDITION"]}, 1, 0]}},
-        "MODIFICATION": {"$sum": {"$cond": [{"$eq": ["$type", "MODIFICATION"]}, 1, 0]}},
-        "DELETION": {"$sum": {"$cond": [{"$eq": ["$type", "DELETION"]}, 1, 0]}},
-        "RESTORATION": {"$sum": {"$cond": [{"$eq": ["$type", "RESTORATION"]}, 1, 0]}},
+        'ADDITION': {'$sum': {'$cond': [{'$eq': ['$type', 'ADDITION']}, 1, 0]}},
+        'MODIFICATION': {'$sum': {'$cond': [{'$eq': ['$type', 'MODIFICATION']}, 1, 0]}},
+        'DELETION': {'$sum': {'$cond': [{'$eq': ['$type', 'DELETION']}, 1, 0]}},
+        'RESTORATION': {'$sum': {'$cond': [{'$eq': ['$type', 'RESTORATION']}, 1, 0]}},
 
         # scoreActions
-        "toxicityCounter": {"$sum": {"$cond": [{"$gt": ["$score.toxicity", 0.5]}, 1, 0]}},
-        "severeToxicityCounter": {"$sum": {"$cond": [{"$gt": ["$score.severeToxicity", 0.5]}, 1, 0]}},
-        "profanityCounter": {"$sum": {"$cond": [{"$gt": ["$score.profanity", 0.5]}, 1, 0]}},
-        "threatCounter": {"$sum": {"$cond": [{"$gt": ["$score.threat", 0.5]}, 1, 0]}},
-        "insultCounter": {"$sum": {"$cond": [{"$gt": ["$score.insult", 0.5]}, 1, 0]}},
-        "identityAttackCounter": {"$sum": {"$cond": [{"$gt": ["$score.identityAttack", 0.5]}, 1, 0]}},
+        'toxicityCounter': {'$sum': {'$cond': [{'$gt': ['$score.toxicity', 0.5]}, 1, 0]}},
+        'severeToxicityCounter': {'$sum': {'$cond': [{'$gt': ['$score.severeToxicity', 0.5]}, 1, 0]}},
+        'profanityCounter': {'$sum': {'$cond': [{'$gt': ['$score.profanity', 0.5]}, 1, 0]}},
+        'threatCounter': {'$sum': {'$cond': [{'$gt': ['$score.threat', 0.5]}, 1, 0]}},
+        'insultCounter': {'$sum': {'$cond': [{'$gt': ['$score.insult', 0.5]}, 1, 0]}},
+        'identityAttackCounter': {'$sum': {'$cond': [{'$gt': ['$score.identityAttack', 0.5]}, 1, 0]}},
 
         # activityDate
-        "firstEdit": {"$min": "$timestamp"},
-        "lastEdit": {"$max": "$timestamp"}
+        'firstEdit': {'$min': '$timestamp'},
+        'lastEdit': {'$max': '$timestamp'}
     }
 
 
     if isUsers:
-        groupQuery["_id"] = {"id": "$user.id", "ip": "$user.ip"}
-        groupQuery["username"] = {"$first": "$user.text"}
-        groupQuery["workedOnPagesCount"] = {"$addToSet": "$pageId"}
+        groupQuery['_id'] = {'id': '$user.id', 'ip': '$user.ip'}
+        groupQuery['username'] = {'$first': '$user.text'}
+        groupQuery['workedOnPagesCount'] = {'$addToSet': '$pageId'}
     else:
-        groupQuery["_id"] = "$pageId"
-        groupQuery["pageTitle"] = {"$first": "$pageTitle"}
-        groupQuery["workedByUsersCount"] = {"$addToSet": "$user"}
+        groupQuery['_id'] = '$pageId'
+        groupQuery['pageTitle'] = {'$first': '$pageTitle'}
+        groupQuery['workedByUsersCount'] = {'$addToSet': '$user'}
 
     # PROJECT
     projectQuery = {
-        "_id": 1,
-        "totalActions": 1,
-        "nrOfRevisions": { "$cond": { "if": { "$isArray": "$nrOfRevisions" }, "then": { "$size": "$nrOfRevisions" }, "else": None} },
-        "typeOfActions": {
-            "ADDITION": "$ADDITION",
-            "MODIFICATION": "$MODIFICATION",
-            "DELETION": "$DELETION",
-            "RESTORATION": "$RESTORATION",
+        '_id': 1,
+        'totalActions': 1,
+        'nrOfRevisions': { '$cond': { 'if': { '$isArray': '$nrOfRevisions' }, 'then': { '$size': '$nrOfRevisions' }, 'else': None} },
+        'typeOfActions': {
+            'ADDITION': '$ADDITION',
+            'MODIFICATION': '$MODIFICATION',
+            'DELETION': '$DELETION',
+            'RESTORATION': '$RESTORATION',
         },
-        "scoreActions": {
-            "toxicityCounter": "$toxicityCounter",
-            "severeToxicityCounter": "$severeToxicityCounter",
-            "profanityCounter": "$profanityCounter",
-            "threatCounter": "$threatCounter",
-            "insultCounter": "$insultCounter",
-            "identityAttackCounter": "$identityAttackCounter"
+        'scoreActions': {
+            'toxicityCounter': '$toxicityCounter',
+            'severeToxicityCounter': '$severeToxicityCounter',
+            'profanityCounter': '$profanityCounter',
+            'threatCounter': '$threatCounter',
+            'insultCounter': '$insultCounter',
+            'identityAttackCounter': '$identityAttackCounter'
         },
-        "activityDate": {
-            "firstEdit": "$firstEdit",
-            "lastEdit": "$lastEdit",
+        'activityDate': {
+            'firstEdit': '$firstEdit',
+            'lastEdit': '$lastEdit',
         }
     }
 
     if isUsers:
-        projectQuery["username"] = 1
-        projectQuery["workedOnPagesCount"] = { "$cond": { "if": { "$isArray": "$workedOnPagesCount" }, "then": { "$size": "$workedOnPagesCount" }, "else": None} }
+        projectQuery['username'] = 1
+        projectQuery['workedOnPagesCount'] = { '$cond': { 'if': { '$isArray': '$workedOnPagesCount' }, 'then': { '$size': '$workedOnPagesCount' }, 'else': None} }
     else:
-        projectQuery["pageTitle"] = 1
-        projectQuery["workedByUsersCount"] = { "$cond": { "if": { "$isArray": "$workedByUsersCount" }, "then": { "$size": "$workedByUsersCount" }, "else": None} }
+        projectQuery['pageTitle'] = 1
+        projectQuery['workedByUsersCount'] = { '$cond': { 'if': { '$isArray': '$workedByUsersCount' }, 'then': { '$size': '$workedByUsersCount' }, 'else': None} }
 
     print(f'{CurrentTimeStr()} - Querying ...')
     usersPointer = collFull.aggregate(
-        [{"$group": groupQuery}, {"$project": projectQuery}],
+        [{'$group': groupQuery}, {'$project': projectQuery}],
         allowDiskUse=True)
     print(f'{CurrentTimeStr()} - Query completed')
 
@@ -136,7 +136,7 @@ def createCollection(collection, collectionMin, isUsers):
         val['scoreActions']['identityAttackCounterRatio'] = val['scoreActions']['identityAttackCounter'] / count
 
         if isUsers:
-            val['isBot'] = True if val['username'] and "bot" in val['username'].lower() else False
+            val['isBot'] = True if val['username'] and 'bot' in val['username'].lower() else False
 
         if isUsers:
             batchValuesMin.append({
@@ -169,13 +169,13 @@ def createCollection(collection, collectionMin, isUsers):
     collectionMin.insert_many(batchValuesMin)
     print(f'{CurrentTimeStr()} - All {counter} documents inserted')
 
-print("Functions defined")
+print('Functions defined')
 
 
 # %% Create Users
-print(" -- USERS -- ")
+print(' -- USERS -- ')
 createCollection(collUsers, collUsersMin, True)
 
 # %% Create Pages
-print(" -- PAGES -- ")
+print(' -- PAGES -- ')
 createCollection(collPages, collPagesMin, False)
