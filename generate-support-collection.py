@@ -38,7 +38,8 @@ def createCollection(collection, collectionMin, isUsers):
 
     # GROUP
     groupQuery = {
-        "count": {"$sum": 1},
+        "totalActions": {"$sum": 1},
+        "nrOfRevisions": {"$addToSet": "$revId"},
 
         # typeOfActions
         "ADDITION": {"$sum": {"$cond": [{"$eq": ["$type", "ADDITION"]}, 1, 0]}},
@@ -72,7 +73,8 @@ def createCollection(collection, collectionMin, isUsers):
     # PROJECT
     projectQuery = {
         "_id": 1,
-        "count": 1,
+        "totalActions": 1,
+        "nrOfRevisions": { "$cond": { "if": { "$isArray": "$nrOfRevisions" }, "then": { "$size": "$nrOfRevisions" }, "else": None} },
         "typeOfActions": {
             "ADDITION": "$ADDITION",
             "MODIFICATION": "$MODIFICATION",
@@ -120,9 +122,9 @@ def createCollection(collection, collectionMin, isUsers):
         val['activityDate']['lastEdit'] = datetime.strptime(val['activityDate']['lastEdit'], '%Y-%m-%dT%H:%M:%SZ')
         days = (val['activityDate']['lastEdit'] - val['activityDate']['firstEdit']).days
         val['activityDate']['activeDays'] = days
-        val['activityDate']['editsPerDay'] = val['count'] / days if days > 0 else 0
+        val['activityDate']['editsPerDay'] = val['totalActions'] / days if days > 0 else 0
 
-        count = val['count']
+        count = val['totalActions']
         val['scoreActions']['toxicityCounterRatio'] = val['scoreActions']['toxicityCounter'] / count
         val['scoreActions']['severeToxicityCounterRatio'] = val['scoreActions']['severeToxicityCounter'] / count
         val['scoreActions']['profanityCounterRatio'] = val['scoreActions']['profanityCounter'] / count
@@ -137,7 +139,8 @@ def createCollection(collection, collectionMin, isUsers):
             batchValuesMin.append({
                 '_id': val['_id'],
                 'username': val['username'],
-                'count': val['count'],
+                'totalActions': val['totalActions'],
+                'nrOfRevisions': val['nrOfRevisions'],
                 'isBot': val['isBot'],
                 'workedOnPagesCount': val['workedOnPagesCount']
             })
@@ -145,7 +148,8 @@ def createCollection(collection, collectionMin, isUsers):
             batchValuesMin.append({
                 '_id': val['_id'],
                 'pageTitle': val['pageTitle'],
-                'count': val['count'],
+                'totalActions': val['totalActions'],
+                'nrOfRevisions': val['nrOfRevisions'],
                 'workedByUsersCount': val['workedByUsersCount']
             })
         batchValues.append(val)
