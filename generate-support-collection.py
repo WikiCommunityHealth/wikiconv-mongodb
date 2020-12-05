@@ -1,9 +1,32 @@
-# %% DB connection setup
+# %% import
+import sys
 import pymongo
 import os
 from datetime import datetime
 from tqdm import tqdm
+
+# %% args
+DB_NAME = 'wiki-conv-it'
+DATASET_COLLECTION_NAME = 'full'
+USERS_COLLECTION_NAME = 'users'
+USERS_MIN_COLLECTION_NAME = 'users-min'
+PAGES_COLLECTION_NAME = 'pages'
+PAGES_MIN_COLLECTION_NAME = 'pages-min'
+if (len(sys.argv) == 3):
+    DB_NAME = sys.argv[1]
+    DATASET_COLLECTION_NAME = sys.argv[2]
+print(f'Using db: {DB_NAME} collection: {DATASET_COLLECTION_NAME}')
+# %% config db
+
 client = pymongo.MongoClient("mongodb://localhost:27017")
+db = client[DB_NAME]
+collFull = db[DATASET_COLLECTION_NAME]
+
+collUsers = db[USERS_COLLECTION_NAME]
+collUsersMin = db[USERS_MIN_COLLECTION_NAME]
+collPages = db[PAGES_COLLECTION_NAME]
+collPagesMin = db[PAGES_MIN_COLLECTION_NAME]
+
 print("Connection setup")
 
 # %% Function setup
@@ -141,22 +164,6 @@ def createCollection(collection, collectionMin, isUsers):
 
 print("Functions defined")
 
-# %% config db
-DB_NAME = 'wiki'
-DATASET_COLLECTION_NAME = 'dataset-it'
-USERS_COLLECTION_NAME = 'users'
-USERS_MIN_COLLECTION_NAME = 'users-min'
-PAGES_COLLECTION_NAME = 'pages'
-PAGES_MIN_COLLECTION_NAME = 'pages-min'
-
-db = client[DB_NAME]
-collFull = db[DATASET_COLLECTION_NAME]
-
-collUsers = db[USERS_COLLECTION_NAME]
-collUsersMin = db[USERS_MIN_COLLECTION_NAME]
-collPages = db[PAGES_COLLECTION_NAME]
-collPagesMin = db[PAGES_MIN_COLLECTION_NAME]
-print("Collections selected")
 
 # %% Create Users
 print(" -- USERS -- ")
