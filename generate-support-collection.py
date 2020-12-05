@@ -30,11 +30,14 @@ collPagesMin = db[PAGES_MIN_COLLECTION_NAME]
 print("Connection setup")
 
 # %% Function setup
+def CurrentTimeStr():
+    return datetime.now().strftime('%H:%M:%S')
+
 def createCollection(collection, collectionMin, isUsers):
 
     collection.drop()
     collectionMin.drop()
-    print("Old collection dropped")
+    print(f'{CurrentTimeStr()} - Old collection dropped')
 
     # GROUP
     groupQuery = {
@@ -102,11 +105,11 @@ def createCollection(collection, collectionMin, isUsers):
         projectQuery["pageTitle"] = 1
         projectQuery["workedByUsersCount"] = { "$cond": { "if": { "$isArray": "$workedByUsersCount" }, "then": { "$size": "$workedByUsersCount" }, "else": None} }
 
-    print('Querying ...')
+    print(f'{CurrentTimeStr()} - Querying ...')
     usersPointer = collFull.aggregate(
         [{"$group": groupQuery}, {"$project": projectQuery}],
         allowDiskUse=True)
-    print('Query completed')
+    print(f'{CurrentTimeStr()} - Query completed')
 
     counter = 0
     batchValues = []
@@ -164,7 +167,7 @@ def createCollection(collection, collectionMin, isUsers):
     
     collection.insert_many(batchValues)
     collectionMin.insert_many(batchValuesMin)
-    print(f'All {counter} documents inserted')
+    print(f'{CurrentTimeStr()} - All {counter} documents inserted')
 
 print("Functions defined")
 
