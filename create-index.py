@@ -19,5 +19,8 @@ coll.create_index("pageId")
 print('pageId index created')
 coll.create_index("user")
 print('user index created')
-coll.create_index(["pageId", "timestamp"])
+coll.create_index([
+    ("pageId", 1),
+    ("timestamp", 1)
+    ])
 print('[pageId, timestamp] index created')
