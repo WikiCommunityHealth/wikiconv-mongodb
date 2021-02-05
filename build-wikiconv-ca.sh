@@ -1,5 +1,3 @@
-
-
 #! /bin/bash
 
 DB_FOLDER="dataset"

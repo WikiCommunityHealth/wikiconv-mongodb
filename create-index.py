@@ -2,7 +2,7 @@ import pymongo
 import sys
 
 
-DB_NAME = 'wiki-conv-it'
+DB_NAME = 'wiki-conv-ca'
 DATASET_COLLECTION_NAME = 'full'
 if (len(sys.argv) == 3):
     DB_NAME = sys.argv[1]
@@ -19,3 +19,5 @@ coll.create_index("pageId")
 print('pageId index created')
 coll.create_index("user")
 print('user index created')
+coll.create_index(["pageId", "timestamp"])
+print('[pageId, timestamp] index created')
